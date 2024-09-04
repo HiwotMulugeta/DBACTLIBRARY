@@ -1,0 +1,100 @@
+create database DBACTLIBRARY
+
+Create table tblPUBLISHER (
+PublisherID  char(10) Primary Key, 
+PublisherName char(50), 
+PublisherCity char(30), 
+PublisherCountry char(30))
+
+insert into tblPUBLISHER(PublisherID, PublisherName, PublisherCity,PublisherCountry)
+values
+('Pub_1', 'Mega Publishing and Distribution Plc', 'Addis Ababa', 'Ethiopia'),
+('Pub_2', 'Addis Ababa University Press', 'Addis Ababa', 'Ethiopia' ),
+('Pub_3', 'Addison-Wesle' ,'Boston', 'United States'),
+('Pub_4','McGraw Hill',  'New York City', 'United States')
+
+create table tblAUTHOR (
+ AuthorID varchar(30) check(AuthorID Not Like '%[^A-Za-Z_0-9]%') primary key, 
+ AuthorName varchar(50) ,
+ AuthorGender char(1) ,
+ AuthorCity varchar(15),
+ AuthorNationality  varchar(10) default 'Ethiopian'
+ )
+ Drop table tblAUTHOR
+ Insert into tblAUTHOR (AuthorID,AuthorName,AuthorGender,AuthorCity,AuthorNationality)
+ values 
+ ('Aut_1' ,'Hadis Alemayehu', 'M', 'Addis Ababa', 'Ethiopian' ),
+('Aut_2' ,'Donald E. Knuth', 'M' ,'Boston', 'American'),
+('Aut_3' ,'Christopher J. Van Wyk', 'M', 'Boston', 'American'),
+( 'Aut_4', 'Thomas Edmonds', 'M', 'New York City', 'American'),
+('Aut_5', 'Hiwot Teffera', 'F', 'Addis Ababa', 'Ethiopian')
+
+alter table tblAUTHOR
+ADD constraint chk_name2 
+check (AuthorID Not Like '%[^%[^A-Za-Z_0-9)]%')
+
+create table tblSHELF (
+ShelfId int primary key,
+ShelfTitle varchar(70), 
+ShelfCatagory varchar(50), 
+ShelfLocation varchar(10))
+
+insert into tblSHELF(ShelfId,ShelfTitle,ShelfCatagory,ShelfLocation)
+values 
+(1,'Amharic  Novel' , 'Novel', 'Room1' ),
+(2, 'Accounting' ,'Accounting and Finance'  , 'Room2'),
+(3, 'Computer Science ', 'Computational Science' , 'Room3'),
+(4,'English Novel','Novel','Room1')
+
+create  table tblBOOK (
+BookID varchar(10) primary key,
+BookName varchar(50),
+AuthorID varchar(30) check(AuthorID Not Like '%[^A-Za-Z_0-9]%') FOREIGN KEY references  tblAUTHOR(AuthorID),
+PublisherID char(10) FOREIGN KEY references  tblPUBLISHER (PublisherID),
+EditionNo int,
+YearofPublication int,
+ShelfId int FOREIGN KEY references tblSHELF (ShelfId)
+
+Insert into  tblBOOK (BookID,BookName,AuthorID,PublisherID,EditionNo,YearofPublication,ShelfId)
+values
+('B_1' ,'Fikir Eske Mekabir', 'Aut_1', 'Pub_1', 5,1990,1),
+('B_2','Tizita', 'Aut_1', 'Pub_1',2,1999,1),
+('B_3','The Art of Computer Programming', 'Aut_2','Pub_3',2,1990,3),
+('B_4','Data Structures and C Programs', 'Aut_3', 'Pub_3', 3,1990,3),
+('B_5', 'Introductory Financial Accounting for Business' , 'Aut_4', 'Pub_4',2,2020,2),
+('B_6', 'Tower in the Sky','Aut_5', 'Pub_2',1,2012,1)
+
+select * from tblBOOK
+
+
+/* creating a virtual table (view) */
+CREATE VIEW VBooks AS 
+SELECT tblBOOK.*,tblAUTHOR.AuthorName,tblPUBLISHER.PublisherName,tblSHELF.ShelfCatagory 
+FROM  tblBOOK  INNER JOIN tblPUBLISHER on tblBOOK.PublisherID=tblPUBLISHER.PublisherID INNER JOIN 
+tblSHELF ON tblBOOK.ShelfId=tblSHELF.ShelfId INNER JOIN  tblAUTHOR on tblBOOK.AuthorID=tblAUTHOR.AuthorID
+
+select * from VBooks
+
+/* stored procesdure */
+
+create procedure selectgender @gender varchar(1)
+
+as
+select * from tblAUTHOR
+where AuthorGender=@gender
+Go
+
+/*Execute the created stored procedure */
+exec selectgender @gender='M'
+
+update tblBOOK 
+set ShelfId=4
+where tblBOOK.BookID='B_6'
+
+select * from tblBOOK
+
+
+/*Write SQL query which displays number  of Books  Group by Author */
+SELECT tblAUTHOR.AuthorName,count(tblBOOK.AuthorID)
+FROM  tblBOOK INNER JOIN  tblAUTHOR ON tblBOOK.AuthorID=tblAUTHOR.AuthorID
+  GROUP BY rollup( tblAUTHOR.AuthorName)
